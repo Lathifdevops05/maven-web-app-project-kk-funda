@@ -1,0 +1,29 @@
+node {
+    def mavenHome = tool name: "maven3.9.9"
+
+    stage('git checkout') {
+        git branch: 'development', credentialsId: 'b29fd73f-5ecd-4eb3-a16a-6bbd9bdbcc05', url: 'https://github.com/Lathifdevops05/maven-web-app-project-kk-funda.git'
+    }
+
+    stage('Build') {
+        sh "${mavenHome}/bin/mvn clean package"
+    }
+
+    stage('SQ Report') {
+        sh "${mavenHome}/bin/mvn sonar:sonar"
+    }
+
+    stage('Deploy into Nexus') {
+        sh "${mavenHome}/bin/mvn clean deploy"
+    }
+
+    stage('Deploy to Tomcat') {
+        echo "Deploying WAR file using curl..."
+
+        sh """
+            curl -u kkfunda:kkfunda \
+            --upload-file ${env.WORKSPACE}/target/maven-web-application.war \
+            "http://35.154.118.239:8080/manager/text/deploy?path=/maven-web-application&update=true"
+        """
+    }
+}
